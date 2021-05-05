@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/stianeikeland/go-rpio/v4"
 )
@@ -32,16 +33,20 @@ func main() {
 
 	log.Println("Starting Pi Service...")
 
-	LED.Output() // 設置輸出腳位
-	LED.Low()
-	defer LED.Low()
+	LED.Output()    // 設置輸出腳位
+	LED.Low()       // 先關閉LED
+	defer LED.Low() // 結束程式時也關閉LED
 
 	const ServoFreq = 50              // 伺服馬達頻率: 50Hz
 	const cycleBase = 10000           // DutyCycle的基本長度
-	var pwm uint32 = 900              // 預設PWM
+	var pwm uint32 = 900              // 預設PWM數值
 	SERVO.Pwm()                       // 設置PWM腳位
 	SERVO.Freq(ServoFreq * cycleBase) // 設置頻率
-	SERVO.DutyCycle(pwm, cycleBase)
+	time.Sleep(time.Second)
+	SERVO.DutyCycle(pwm, cycleBase) // 先預設位置
+	defer func() {
+		SERVO.Output() // 結束程式時解除PWM模式
+	}()
 
 	/* 50Hz 每個角度對應的Duty值
 	 *  176 / 10000 =  1.76% 最右邊 [v]
